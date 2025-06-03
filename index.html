@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Pet App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes bounce {
+            0%, 20%, 53%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40%, 43% {
+                transform: translateY(-30px);
+            }
+            70% {
+                transform: translateY(-15px);
+            }
+            90% {
+                transform: translateY(-4px);
+            }
+        }
+        
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+        
+        .animate-bounce {
+            animation: bounce 1s infinite;
+        }
+        
+        .animate-spin {
+            animation: spin 1s linear infinite;
+        }
+        
+        .glass {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script type="module">
+        import { render, h } from 'https://esm.sh/preact@10.19.3';
+        import { useState } from 'https://esm.sh/preact@10.19.3/hooks';
+        import htm from 'https://esm.sh/htm@3.1.1';
+
+        const html = htm.bind(h);
+
+        // Icon components
+        const Heart = () => html`
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+        `;
+
+        const Zap = () => html`
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="13,2 3,14 12,14 11,22 21,10 12,10 13,2"></polygon>
+            </svg>
+        `;
+
+        const Brain = () => html`
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"></path>
+                <path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"></path>
+                <path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"></path>
+                <path d="M17.599 6.5a3 3 0 0 0 .399-1.375"></path>
+                <path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"></path>
+                <path d="M3.477 10.896a4 4 0 0 1 .585-.396"></path>
+                <path d="M19.938 10.5a4 4 0 0 1 .585.396"></path>
+                <path d="M6 18a4 4 0 0 1-1.967-.516"></path>
+                <path d="M19.967 17.484A4 4 0 0 1 18 18"></path>
+            </svg>
+        `;
+
+        const Apple = () => html`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 20.94c1.5 0 2.75 1.06 4 1.06 3 0 6-8 6-12.22A4.91 4.91 0 0 0 17 5c-2.22 0-4 1.44-5 2-1-.56-2.78-2-5-2a4.9 4.9 0 0 0-5 4.78C2 14 5 22 8 22c1.25 0 2.5-1.06 4-1.06Z"></path>
+                <path d="M10.2 2.4c.8-.8 1.6-1.2 2.8-1.2s2 .4 2.8 1.2"></path>
+            </svg>
+        `;
+
+        const Gamepad = () => html`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="6" x2="10" y1="12" y2="12"></line>
+                <line x1="8" x2="8" y1="10" y2="14"></line>
+                <line x1="15" x2="15.01" y1="13" y2="13"></line>
+                <line x1="18" x2="18.01" y1="11" y2="11"></line>
+                <rect width="20" height="12" x="2" y="6" rx="2"></rect>
+            </svg>
+        `;
+
+        const Star = () => html`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12,2 15.09,8.26 22,9.27 17,14.14 18.18,21.02 12,17.77 5.82,21.02 7,14.14 2,9.27 8.91,8.26 12,2"></polygon>
+            </svg>
+        `;
+
+        const MessageCircle = () => html`
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"></path>
+            </svg>
+        `;
+
+        const Gift = () => html`
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="8" width="18" height="4" rx="1"></rect>
+                <path d="M12 8v13"></path>
+                <path d="M19 12v7a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2v-7"></path>
+                <path d="M7.5 8a2.5 2.5 0 0 1 0-5A4.9 4.9 0 0 1 12 8a4.9 4.9 0 0 1 4.5-5 2.5 2.5 0 0 1 0 5"></path>
+            </svg>
+        `;
+
+        const Settings = () => html`
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"></path>
+                <circle cx="12" cy="12" r="3"></circle>
+            </svg>
+        `;
+
+        const Sparkles = () => html`
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin text-yellow-300">
+                <path d="M9.937 15.5A2 2 0 0 0 8.5 14.063l-6.135-1.582a.5.5 0 0 1 0-.962L8.5 9.936A2 2 0 0 0 9.937 8.5l1.582-6.135a.5.5 0 0 1 .963 0L14.063 8.5A2 2 0 0 0 15.5 9.937l6.135 1.581a.5.5 0 0 1 0 .964L15.5 14.063a2 2 0 0 0-1.437 1.437l-1.582 6.135a.5.5 0 0 1-.963 0z"></path>
+                <path d="M20 3v4"></path>
+                <path d="M22 5h-4"></path>
+                <path d="M4 17v2"></path>
+                <path d="M5 18H3"></path>
+            </svg>
+        `;
+
+        // Progress Bar Component
+        const ProgressBar = ({ value, className = "" }) => html`
+            <div class="w-full bg-gray-200 rounded-full h-2 ${className}">
+                <div 
+                    class="bg-blue-600 h-2 rounded-full transition-all duration-300 ease-out"
+                    style="width: ${value}%"
+                ></div>
+            </div>
+        `;
+
+        // Button Component
+        const Button = ({ onClick, className = "", disabled = false, children, ...props }) => html`
+            <button
+                onClick=${onClick}
+                disabled=${disabled}
+                class="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ${className}"
+                ...${props}
+            >
+                ${children}
+            </button>
+        `;
+
+        // Badge Component
+        const Badge = ({ children, className = "" }) => html`
+            <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${className}">
+                ${children}
+            </span>
+        `;
+
+        // Card Components
+        const Card = ({ children, className = "" }) => html`
+            <div class="rounded-lg border bg-card text-card-foreground shadow-sm ${className}">
+                ${children}
+            </div>
+        `;
+
+        const CardContent = ({ children, className = "" }) => html`
+            <div class="p-6 pt-0 ${className}">
+                ${children}
+            </div>
+        `;
+
+        // Main App Component
+        const AIPetApp = () => {
+            const [happiness, setHappiness] = useState(85);
+            const [energy, setEnergy] = useState(72);
+            const [intelligence, setIntelligence] = useState(90);
+            const [isPlaying, setIsPlaying] = useState(false);
+            const [lastInteraction, setLastInteraction] = useState("2 minutes ago");
+
+            const handleFeed = () => {
+                setEnergy(Math.min(100, energy + 15));
+                setHappiness(Math.min(100, happiness + 10));
+                setLastInteraction("just now");
+            };
+
+            const handlePlay = () => {
+                setIsPlaying(true);
+                setHappiness(Math.min(100, happiness + 20));
+                setEnergy(Math.max(0, energy - 10));
+                setLastInteraction("just now");
+                setTimeout(() => setIsPlaying(false), 2000);
+            };
+
+            const handleTrain = () => {
+                setIntelligence(Math.min(100, intelligence + 5));
+                setEnergy(Math.max(0, energy - 15));
+                setLastInteraction("just now");
+            };
+
+            return html`
+                <div class="max-w-sm mx-auto bg-gradient-to-br from-purple-400 via-pink-400 to-blue-400 min-h-screen">
+                    <!-- Header -->
+                    <div class="flex items-center justify-between p-4 text-white">
+                        <div>
+                            <h1 class="text-xl font-bold">My AI Pet</h1>
+                            <p class="text-sm opacity-90">Luna the Assistant</p>
+                        </div>
+                        <${Button} 
+                            className="text-white hover:bg-white hover:bg-opacity-20 p-2 rounded-md"
+                        >
+                            <${Settings} />
+                        </${Button}>
+                    </div>
+
+                    <!-- Pet Avatar -->
+                    <div class="flex flex-col items-center px-4 pb-6">
+                        <div class="relative">
+                            <div class="w-48 h-48 rounded-full bg-gradient-to-br from-yellow-300 to-orange-400 flex items-center justify-center text-6xl transition-transform duration-500 ${isPlaying ? 'animate-bounce' : ''}">
+                                🤖
+                            </div>
+                            ${isPlaying ? html`
+                                <div class="absolute -top-2 -right-2">
+                                    <${Sparkles} />
+                                </div>
+                            ` : ''}
+                            <${Badge} className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-3 py-1">
+                                Level 12
+                            </${Badge}>
+                        </div>
+                        <div class="mt-4 text-center text-white">
+                            <p class="text-lg font-semibold">Luna is feeling great!</p>
+                            <p class="text-sm opacity-90">Last active: ${lastInteraction}</p>
+                        </div>
+                    </div>
+
+                    <!-- Stats -->
+                    <${Card} className="mx-4 mb-4 glass">
+                        <${CardContent} className="p-4">
+                            <div class="space-y-4">
+                                <div class="flex items-center gap-3">
+                                    <div class="text-red-500">
+                                        <${Heart} />
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span>Happiness</span>
+                                            <span>${happiness}%</span>
+                                        </div>
+                                        <${ProgressBar} value=${happiness} />
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="text-yellow-500">
+                                        <${Zap} />
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span>Energy</span>
+                                            <span>${energy}%</span>
+                                        </div>
+                                        <${ProgressBar} value=${energy} />
+                                    </div>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <div class="text-purple-500">
+                                        <${Brain} />
+                                    </div>
+                                    <div class="flex-1">
+                                        <div class="flex justify-between text-sm mb-1">
+                                            <span>Intelligence</span>
+                                            <span>${intelligence}%</span>
+                                        </div>
+                                        <${ProgressBar} value=${intelligence} />
+                                    </div>
+                                </div>
+                            </div>
+                        </${CardContent}>
+                    </${Card}>
+
+                    <!-- Action Buttons -->
+                    <div class="px-4 space-y-3">
+                        <div class="grid grid-cols-2 gap-3">
+                            <${Button}
+                                onClick=${handleFeed}
+                                className="h-16 bg-green-500 hover:bg-green-600 text-white flex flex-col items-center gap-1 rounded-lg"
+                            >
+                                <${Apple} />
+                                <span class="text-sm">Feed</span>
+                            </${Button}>
+                            <${Button}
+                                onClick=${handlePlay}
+                                className="h-16 bg-blue-500 hover:bg-blue-600 text-white flex flex-col items-center gap-1 rounded-lg"
+                                disabled=${isPlaying}
+                            >
+                                <${Gamepad} />
+                                <span class="text-sm">${isPlaying ? 'Playing...' : 'Play'}</span>
+                            </${Button}>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3">
+                            <${Button}
+                                onClick=${handleTrain}
+                                className="h-16 bg-purple-500 hover:bg-purple-600 text-white flex flex-col items-center gap-1 rounded-lg"
+                            >
+                                <${Star} />
+                                <span class="text-sm">Train</span>
+                            </${Button}>
+                            <${Button} className="h-16 bg-pink-500 hover:bg-pink-600 text-white flex flex-col items-center gap-1 rounded-lg">
+                                <${MessageCircle} />
+                                <span class="text-sm">Chat</span>
+                            </${Button}>
+                        </div>
+
+                        <${Button} className="w-full h-14 bg-gradient-to-r from-orange-400 to-red-500 hover:from-orange-500 hover:to-red-600 text-white flex items-center justify-center gap-2 rounded-lg">
+                            <${Gift} />
+                            <span>Daily Reward Available!</span>
+                        </${Button}>
+                    </div>
+
+                    <!-- Bottom Navigation -->
+                    <div class="fixed bottom-0 left-1/2 transform -translate-x-1/2 w-full max-w-sm glass border-t">
+                        <div class="flex justify-around py-3">
+                            <${Button} className="flex flex-col items-center gap-1 text-gray-600 hover:text-gray-800 p-2">
+                                <${Heart} />
+                                <span class="text-xs">Home</span>
+                            </${Button}>
+                            <${Button} className="flex flex-col items-center gap-1 text-gray-600 hover:text-gray-800 p-2">
+                                <${Gamepad} />
+                                <span class="text-xs">Games</span>
+                            </${Button}>
+                            <${Button} className="flex flex-col items-center gap-1 text-gray-600 hover:text-gray-800 p-2">
+                                <${Gift} />
+                                <span class="text-xs">Shop</span>
+                            </${Button}>
+                            <${Button} className="flex flex-col items-center gap-1 text-gray-600 hover:text-gray-800 p-2">
+                                <${Settings} />
+                                <span class="text-xs">Settings</span>
+                            </${Button}>
+                        </div>
+                    </div>
+
+                    <!-- Padding for bottom nav -->
+                    <div class="h-20"></div>
+                </div>
+            `;
+        };
+
+        // Render the app
+        render(html`<${AIPetApp} />`, document.getElementById('app'));
+    </script>
+</body>
+</html>
